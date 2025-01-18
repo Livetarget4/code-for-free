@@ -1,0 +1,144 @@
+import pickle
+import random
+import os
+
+# Game class to hold the player's data and game mechanics
+class TrailGame:
+    def __init__(self):
+        self.distance = 0  # Distance covered on the trail
+        self.food = 10     # Starting food count
+        self.water = 10    # Starting water count
+        self.health = 10   # Starting health
+        self.days = 0      # Days spent on the trail
+        self.max_distance = 50  # Goal distance to finish the trail
+        self.inventory = {"medkit": 0, "tools": 0}  # Player's inventory
+
+    def check_status(self):
+        """Check and display current player status."""
+        return f"Distance: {self.distance}/{self.max_distance} km, Food: {self.food}, Water: {self.water}, Health: {self.health}, Days: {self.days}, Inventory: {self.inventory}"
+
+    def random_event(self):
+        """Trigger random events that affect the player."""
+        event = random.choice(["weather", "wildlife", "injury", "nothing"])
+        if event == "weather":
+            print("A storm is approaching! You need to take shelter.")
+            self.food -= 2
+            self.water -= 2
+            self.health -= 2
+        elif event == "wildlife":
+            print("You encounter a wild animal! It steals some of your food.")
+            self.food -= 3
+        elif event == "injury":
+            print("You injured yourself while moving. Your health decreases.")
+            self.health -= 3
+        else:
+            print("Nothing unusual happens today.")
+
+    def rest(self):
+        """Rest and recover some resources and health."""
+        self.food -= 1
+        self.water -= 1
+        self.days += 1
+        if random.random() < 0.5:
+            self.food += 2  # Chance to find food
+            self.water += 2  # Chance to find water
+        if random.random() < 0.3:
+            self.health += 2  # Chance to heal
+        print("You rested for a day.")
+
+    def move(self, fast=False):
+        """Move forward along the trail. Can choose to move faster at the cost of resources."""
+        if fast:
+            self.distance += random.randint(7, 12)
+            self.food -= 2
+            self.water -= 2
+            self.health -= 1
+            print("You moved quickly, but it drained your resources.")
+        else:
+            self.distance += random.randint(3, 7)
+            self.food -= 1
+            self.water -= 1
+            print("You moved forward at a normal pace.")
+        self.days += 1
+        self.random_event()
+
+    def use_medkit(self):
+        """Use a medkit to restore health."""
+        if self.inventory["medkit"] > 0:
+            self.health = min(self.health + 5, 10)  # Restore health, but max out at 10
+            self.inventory["medkit"] -= 1
+            print("You used a medkit and restored health.")
+        else:
+            print("You don't have any medkits left!")
+
+    def is_game_over(self):
+        """Check if the game is over."""
+        if self.food <= 0 or self.water <= 0 or self.health <= 0:
+            print("You ran out of resources or health! Game over.")
+            return True
+        if self.distance >= self.max_distance:
+            print("You have completed the trail! Congratulations!")
+            return True
+        return False
+
+    def save_game(self, filename="trail_game_save.pkl"):
+        """Save the current game state to a file."""
+        with open(filename, 'wb') as save_file:
+            pickle.dump(self, save_file)
+        print("Game saved!")
+
+    @staticmethod
+    def load_game(filename="trail_game_save.pkl"):
+        """Load a previously saved game state."""
+        if os.path.exists(filename):
+            with open(filename, 'rb') as save_file:
+                game = pickle.load(save_file)
+            print("Game loaded!")
+            return game
+        else:
+            print("No saved game found!")
+            return None
+
+# Game loop
+def main():
+    print("Welcome to the Enhanced Trail Adventure Game!")
+    game = TrailGame()
+
+    while True:
+        print("\nWhat do you want to do?")
+        print("1. Move (Normal)")
+        print("2. Move (Fast, more resource consumption)")
+        print("3. Rest")
+        print("4. Check status")
+        print("5. Use Medkit (if available)")
+        print("6. Save game")
+        print("7. Load game")
+        print("8. Quit")
+
+        choice = input("Enter your choice (1-8): ")
+
+        if choice == "1":
+            game.move(fast=False)
+        elif choice == "2":
+            game.move(fast=True)
+        elif choice == "3":
+            game.rest()
+        elif choice == "4":
+            print(game.check_status())
+        elif choice == "5":
+            game.use_medkit()
+        elif choice == "6":
+            game.save_game()
+        elif choice == "7":
+            loaded_game = TrailGame.load_game()
+            if loaded_game:
+                game = loaded_game  # Resume from the saved game
+        elif choice == "8":
+            print("Goodbye!")
+            break
+
+        if game.is_game_over():
+            break  # Game over condition
+
+if __name__ == "__main__":
+    main()
